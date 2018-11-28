@@ -9,7 +9,7 @@
     ],
     "require": {
         "php": ">=7.1",
-        "bernardosilva/jwt-api-client-php": "^0.0.3"
+        "guzzlehttp/guzzle": "^6.3"
     },
     "autoload": {
         "psr-4": {

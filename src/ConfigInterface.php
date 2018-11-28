@@ -48,4 +48,7 @@ interface ConfigInterface
      * @return $this
      */
     public function setApiVersion($apiVersion);
+
+    public function getBaseUrl();
+    public function setBaseUrl($baseUrl);
 }

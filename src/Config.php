@@ -24,7 +24,9 @@ class Config implements ConfigInterface
      * @var string
      */
     protected $apiVersion;
-    
+
+    protected $baseUrl;
+
     /**
      * Constructor.
      *
@@ -34,13 +36,15 @@ class Config implements ConfigInterface
      * @return void
      * @throws \RuntimeException
      */
-    public function __construct($version, $token, $apiVersion)
+    public function __construct($version, $token, $apiVersion, $baseUrl)
     {
         $this->setVersion($version);
 
         $this->setToken($token);
 
         $this->setApiVersion($apiVersion ?: getenv('LOGISTICS_API_VERSION') ?: 'v1');
+
+        $this->setBaseUrl($baseUrl);
 
         if (! $this->token) {
             throw new \RuntimeException('The token is not defined!');
@@ -101,25 +105,14 @@ class Config implements ConfigInterface
         return $this;
     }
 
-    /**
-     * Returns the managed account id.
-     *
-     * @return string
-     */
-    public function getAccountId()
+    public function getBaseUrl()
     {
-        return $this->accountId;
+        return $this->baseUrl;
     }
 
-    /**
-     * Sets the managed account id.
-     *
-     * @param  string  $accountId
-     * @return $this
-     */
-    public function setAccountId($accountId)
+    public function setBaseUrl($baseUrl)
     {
-        $this->accountId = $accountId;
+        $this->baseUrl = $baseUrl;
 
         return $this;
     }

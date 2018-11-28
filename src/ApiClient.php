@@ -2,14 +2,15 @@
 
 namespace Kato\Logistics;
 
-use BernardoSilva\JWTAPIClient\APIClient;
-use BernardoSilva\JWTAPIClient\AccessTokenCredentials;
 use Illuminate\Support\Facades\Cache;
+use GuzzleHttp\Client;
 
-class LogClient
+use ReflectionClass;
+
+class ApiClient
 {
-    const VERSION = 'v1';
-    const API_LOGIN = '/login';
+    const VERSION = '1.0';
+    const API_LOGIN = '/api/login';
 
     protected
         $username = null,
@@ -26,7 +27,7 @@ class LogClient
      * @param  string  $apiVersion
      * @throws \RuntimeException
      */
-    public function __construct($version, $token, $apiVersion)
+    public function __construct($apiVersion = null)
     {
         $this->setBaseUrl(getenv('LOGISTICS_API_URL'));
         $this->setUsername(getenv('LOGISTICS_API_USERNAME'));
@@ -42,10 +43,12 @@ class LogClient
             throw new \RuntimeException('The token is not defined!');
         }
 
-        $this->config = new Config(self::VERSION, $token, $apiVersion);
+        $this->config = new Config(self::VERSION, $token, $apiVersion, $this->baseUrl);
+    }
 
-        $credentials = new AccessTokenCredentials($token);
-        $this->apiClient->setCredentials($credentials);
+    public static function make($apiVersion = null)
+    {
+        return new static($apiVersion);
     }
 
     /**
@@ -109,12 +112,22 @@ class LogClient
 
     public function getToken()
     {
-        return Cache::rememberForever('LOG_API_TOKEN', function () use ($type, $query) {
+        $client = new Client();
+
+        $response = $client->request('POST', $this->baseUrl . self::API_LOGIN, [
+            'form_params' => [
+                'username' => $this->username,
+                'password' => $this->password
+            ]
+        ]);
+        dd($response);
+
+        return Cache::rememberForever('LOG_API_TOKEN', function () {
             $this->apiClient = new APIClient($this->baseUrl);
             $options = [
                 'verify' => false, // might need this if API uses self signed certificate
                 'form_params' => [
-                    'key' => $this->username,
+                    'username' => $this->username,
                     'password' => $this->password
                 ]
             ];
@@ -122,7 +135,53 @@ class LogClient
             $response = $this->apiClient->post(self::API_LOGIN, $options);
             $loginResponseDecoded = json_decode($response->getBody()->getContents(), true);
 
-            return $loginResponseDecoded['data']['access_token'];
+            return $loginResponseDecoded['data']['token'];
         });
+    }
+
+    /**
+     * Dynamically handle missing methods.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return \Cartalyst\Stripe\Api\ApiInterface
+     */
+    public function __call($method, array $parameters)
+    {
+        if ($this->isIteratorRequest($method)) {
+            $apiInstance = $this->getApiInstance(substr($method, 0, -8));
+
+            return (new Pager($apiInstance))->fetch($parameters);
+        }
+
+        return $this->getApiInstance($method);
+    }
+
+    /**
+     * Determines if the request is an iterator request.
+     *
+     * @return bool
+     */
+    protected function isIteratorRequest($method)
+    {
+        return substr($method, -8) === 'Iterator';
+    }
+
+    /**
+     * Returns the Api class instance for the given method.
+     *
+     * @param  string  $method
+     * @return \Cartalyst\Stripe\Api\ApiInterface
+     * @throws \BadMethodCallException
+     */
+    protected function getApiInstance($method)
+    {
+        $class = "\\Kato\\Logistics\\Api\\".ucwords($method);
+
+        if (class_exists($class) && ! (new ReflectionClass($class))->isAbstract()) {
+            return new $class($this->config);
+        }
+
+        throw new \BadMethodCallException("Undefined method [{$method}] called.");
     }
 }
