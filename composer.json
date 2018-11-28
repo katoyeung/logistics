@@ -1,0 +1,19 @@
+{
+    "name": "kato/logistics",
+    "description": "logistics api",
+    "authors": [
+        {
+            "name": "Kato",
+            "email": "katoyeung@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "bernardosilva/jwt-api-client-php": "^0.0.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kato\\Logistics\\": "src/"
+        }
+    }
+}
