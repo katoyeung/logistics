@@ -5,6 +5,7 @@ namespace Kato\Logistics;
 use Illuminate\Support\Facades\Cache;
 use GuzzleHttp\Client;
 
+use Kato\Logistics\Exceptions\InvalidResponseException;
 use ReflectionClass;
 
 class ApiClient
@@ -112,30 +113,23 @@ class ApiClient
 
     public function getToken()
     {
-        $client = new Client();
-
-        $response = $client->request('POST', $this->baseUrl . self::API_LOGIN, [
-            'form_params' => [
-                'username' => $this->username,
-                'password' => $this->password
-            ]
-        ]);
-        dd($response);
-
         return Cache::rememberForever('LOG_API_TOKEN', function () {
-            $this->apiClient = new APIClient($this->baseUrl);
-            $options = [
-                'verify' => false, // might need this if API uses self signed certificate
+            $client = new Client();
+            $response = $client->request('POST', $this->baseUrl . self::API_LOGIN, [
                 'form_params' => [
                     'username' => $this->username,
                     'password' => $this->password
                 ]
-            ];
+            ]);
 
-            $response = $this->apiClient->post(self::API_LOGIN, $options);
-            $loginResponseDecoded = json_decode($response->getBody()->getContents(), true);
-
-            return $loginResponseDecoded['data']['token'];
+            if($response->getStatusCode() == 200) {
+                $result = json_decode($response->getBody()->getContents(), true);
+                if (isset($result['data']['token'])) {
+                    dd($result['data']['token']);
+                }else {
+                    throw new InvalidResponseException('Logistics-API', 'Login', '');
+                }
+            }
         });
     }
 
