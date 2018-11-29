@@ -132,9 +132,12 @@ abstract class Api implements ApiInterface
     public function execute($httpMethod, $url, array $parameters = [])
     {
         try {
-            $parameters = Utility::prepareParameters($parameters);
-
-            $response = $this->getClient()->{$httpMethod}('api/'.$url, [ 'query' => $parameters ]);
+            if (array_key_exists('json', $parameters)) {
+                $response = $this->getClient()->{$httpMethod}('api/'.$url, $parameters);
+            } else {
+                $parameters = Utility::prepareParameters($parameters);
+                $response = $this->getClient()->{$httpMethod}('api/'.$url, [ 'query' => $parameters ]);
+            }
 
             return json_decode((string) $response->getBody(), true);
         } catch (ClientException $e) {
@@ -166,6 +169,9 @@ abstract class Api implements ApiInterface
         $stack->push(Middleware::mapRequest(function (RequestInterface $request) {
             $config = $this->config;
             $request = $request->withHeader('Authorization', 'Bearer '.$config->getToken());
+            $request = $request->withHeader('Content-Type', 'application/json');
+            $request = $request->withHeader('Content-Type', 'application/json');
+
             return $request;
         }));
 
