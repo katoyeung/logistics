@@ -125,7 +125,7 @@ class ApiClient
             if($response->getStatusCode() == 200) {
                 $result = json_decode($response->getBody()->getContents(), true);
                 if (isset($result['data']['token'])) {
-                    dd($result['data']['token']);
+                    return $result['data']['token'];
                 }else {
                     throw new InvalidResponseException('Logistics-API', 'Login', '');
                 }
