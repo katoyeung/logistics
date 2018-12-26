@@ -35,7 +35,7 @@ class Shipments extends Api
      */
     public function update($shipmentId, array $parameters = [])
     {
-        return $this->_post("shipments/{$shipmentId}", $parameters);
+        return $this->_put("shipments/{$shipmentId}", $parameters);
     }
 
     /**
